@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { actionsDropdownItems } from "@/constants";
+import { renameFile } from "@/lib/actions/file.actions";
 import { constructDownloadUrl } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Models } from "node-appwrite";
 import { useState } from "react";
 import { Button } from "./ui/button";
@@ -32,6 +34,8 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
   const [name, setName] = useState(file.name);
   const [isLoading, setIsLoading] = useState(false);
 
+  const path = usePathname();
+
   const closeAllModals = () => {
     setIsModalOpen(false);
     setisDropdownOpen(false);
@@ -40,7 +44,23 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
     // setEmails([]);
   };
 
-  const handleAction = async () => {};
+  const handleAction = async () => {
+    if (!action) return;
+    setIsLoading(true);
+    let success = false;
+
+    const actions = {
+      rename: () =>
+        renameFile({ fileId: file.$id, name, extension: file.extension, path }),
+      share: () => console.log("share"),
+      delete: () => console.log("delete"),
+    };
+
+    success = await actions[action.value as keyof typeof actions]();
+
+    if (success) closeAllModals();
+    setIsLoading(false);
+  };
 
   const renderDialogContent = () => {
     if (!action) return null;
@@ -65,7 +85,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
             <Button onClick={closeAllModals} className="modal-cancel-button">
               Cancel
             </Button>
-            <Button onClick={handleAction}>
+            <Button onClick={handleAction} className="modal-submit-button">
               <p className="capitalize">{value}</p>
               {isLoading && (
                 <Image
